@@ -26,8 +26,17 @@ const shouldTryFallback = (error) => {
 const connectDB = async () => {
   try {
     configureDnsResolvers();
-    // We will get the connection string from our .env file
-    const conn = await mongoose.connect(process.env.MONGODB_URI, connectOptions);
+    const mongoUri = (process.env.MONGODB_URI || '').trim();
+
+    if (!mongoUri) {
+      throw new Error('MONGODB_URI is not set.');
+    }
+
+    if (!/^mongodb(\+srv)?:\/\//.test(mongoUri)) {
+      throw new Error('MONGODB_URI must start with mongodb:// or mongodb+srv://');
+    }
+
+    const conn = await mongoose.connect(mongoUri, connectOptions);
     console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
     if (process.env.MONGODB_URI_FALLBACK && shouldTryFallback(error)) {
